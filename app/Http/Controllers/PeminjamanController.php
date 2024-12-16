@@ -117,7 +117,8 @@ class PeminjamanController extends Controller
             'nominal_peminjaman' => 'required|numeric|min:0',
             'tanggal_peminjaman' => 'required|date',
             'masa_peminjaman' => 'required|integer|min:1',
-            'ktm' => 'required|string',
+            'ktm' => 'required|image:jpeg,png,jpg,gif,svg|max:2048',
+            // 'ktm' => 'required',
             'deskripsi_peminjaman' => 'required|string',
         ]);
 
@@ -128,13 +129,18 @@ class PeminjamanController extends Controller
             ], 401);
         }
 
-        // Buat peminjaman baru
+        $uploadFolder = 'peminjaman';
+        $image = $request->file('ktm');
+        $image_uploaded_path = $image->store($uploadFolder, 'public');
+        $uploadedImageResponse = basename($image_uploaded_path);
+
         $peminjaman = Peminjaman::create([
             'nomor_akun' => $user->id,
             'nominal_peminjaman' => $request->nominal_peminjaman,
             'tanggal_peminjaman' => $request->tanggal_peminjaman,
             'masa_peminjaman' => $request->masa_peminjaman,
-            'ktm' => $request->ktm,
+            'ktm' => $uploadedImageResponse,
+            // 'ktm' => $request->ktm,
             'deskripsi_peminjaman' => $request->deskripsi_peminjaman,
             'nominal_fix' => $request->nominal_peminjaman,
         ]);

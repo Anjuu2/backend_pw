@@ -11,16 +11,17 @@ use Exception;
 
 class AkunController extends Controller
 {
-    public function register(Request $request){
+    public function register(Request $request)
+    {
         $request->validate([
-            'npm' => 'required',
+            'npm' => 'required|unique:akuns,npm',
             'nomor_rekening' => 'required',
             'nama_akun' => 'required',
-            'pin' => 'required',
-            'password' => 'required',
+            'pin' => 'required|numeric|digits:6',
+            'password' => 'required|min:8',
         ]);
 
-        try{
+        try {
             $akun = Akun::create([
                 'npm' => $request->npm,
                 'nomor_rekening' => $request->nomor_rekening,
@@ -33,19 +34,21 @@ class AkunController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
             return response()->json([
                 "status" => true,
-                "message" => "Register successfull",
+                "message" => "Register successful",
                 "data" => $akun,
             ], 200);
-        }catch (Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 "status" => false,
                 "message" => "Something went wrong",
-                "data" => $e->getMessage(),
+                "error" => $e->getMessage(),
             ], 400);
         }
     }
+
 
     public function login(Request $request)
     {
@@ -102,5 +105,78 @@ class AkunController extends Controller
         }
 
         return response()->json(['message' => 'Not logged in'], 401);
+    }
+
+    public function show(Request $request, $id)
+    {
+        $user = Auth::user();
+
+        if ($user->isAdmin == 0 && $user->id != $id) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized access',
+            ], 403);
+        }
+
+        $akun = Akun::find($id);
+
+        if (!$akun) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Akun not found',
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Akun retrieved successfully',
+            'data' => $akun,
+        ], 200);
+    }
+
+    public function showNamaAkun($id)
+    {
+        $akun = Akun::select('nama_akun')->where('id', $id)->first();
+
+        if (!$akun) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Akun not found',
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Nama akun retrieved successfully',
+            'data' => $akun->nama_akun,
+        ], 200);
+    }
+
+    public function destroy($id)
+    {
+        $user = Auth::user();
+
+        if ($user->isAdmin == 0 && $user->id != $id) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized access',
+            ], 403);
+        }
+
+        $akun = Akun::find($id);
+
+        if (!$akun) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Akun not found',
+            ], 404);
+        }
+
+        $akun->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Akun deleted successfully',
+        ], 200);
     }
 }

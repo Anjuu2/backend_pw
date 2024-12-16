@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Pembayaran;
 use App\Models\Peminjaman;
+use App\Models\Akun;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -148,11 +149,15 @@ class PembayaranController extends Controller
         $peminjaman->nominal_peminjaman -= $nominal_angsuran;
         $peminjaman->save();
 
+        $user->saldo -= $nominal_angsuran;
+        $user->save();
+
         return response()->json([
             'status' => true,
             'message' => 'Pembayaran created successfully.',
             'data' => $pembayaran,
             'peminjaman' => $peminjaman,
+            'akun' => $user,
         ], 201);
     }
 

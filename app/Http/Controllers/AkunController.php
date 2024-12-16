@@ -93,4 +93,14 @@ class AkunController extends Controller
             ], 500);
         }
     }
+
+    public function logout (Request $request)
+    {
+        if(Auth::check()){
+            $request->user()->currentAccessToken()->delete();
+            return response()->json(['message' => 'Logged out successfully']);
+        }
+
+        return response()->json(['message' => 'Not logged in'], 401);
+    }
 }

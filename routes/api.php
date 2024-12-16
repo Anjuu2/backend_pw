@@ -45,4 +45,6 @@ Route::middleware('auth:sanctum')->group(function (){
     
     Route::get('/riwayat', [RiwayatController::class, "index"]);
     Route::post('/riwayat/create', [RiwayatController::class, "create"]);
+
+    Route::post('/logout', [AkunController::class, 'logout']);
 });

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Deposit;
+use App\Models\Akun;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -107,27 +108,49 @@ class DepositController extends Controller
 
     ///////////////////////////////////////////// USER /////////////////////////////////////////
     public function create(Request $request)
-    {
-        $user = Auth::user();
+{
+    $user = Auth::user();
 
-        $request->validate([
-            'nominal_deposit' => 'required|numeric|min:0',
-            'tanggal_transaksi' => 'required|date',
-        ]);
+    $request->validate([
+        'nominal_deposit' => 'required|numeric|min:0',
+        'tanggal_transaksi' => 'required|date',
+    ]);
 
-        $deposit = Deposit::create([
-            'nomor_akun' => $request->nomor_akun,
-            'nominal_deposit' => $request->nominal_deposit,
-            'tanggal_transaksi' => $request->tanggal_transaksi,
-        ]);
-
+    if (!$user) {
         return response()->json([
-            'status' => true,
-            'message' => 'Deposit created successfully.',
-            'data' => $deposit,
-            'user' => $user,
-        ], 201);
+            'status' => false,
+            'message' => 'User not authenticated',
+        ], 401);
     }
+
+    $deposit = Deposit::create([
+        'nomor_akun' => $user->id,
+        'nominal_deposit' => $request->nominal_deposit,
+        'tanggal_transaksi' => $request->tanggal_transaksi,
+    ]);
+
+    // Mengambil akun yang terkait dengan nomor_akun
+    // $akun = Akun::where('nomor_akun', $user->id)->first();
+
+    // if (!$akun) {
+    //     return response()->json([
+    //         'status' => false,
+    //         'message' => 'Akun tidak ditemukan.',
+    //     ], 404);
+    // }
+
+    $user->saldo += $request->nominal_deposit;
+    $user->save();
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Deposit created successfully. Saldo akun berhasil diperbarui.',
+        'data' => $deposit,
+        'user' => $user,
+        'updated_balance' => $user->saldo,
+    ], 201);
+}
+
 
     public function index()
     {

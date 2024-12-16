@@ -20,6 +20,7 @@ class Peminjaman extends Model
         'masa_peminjaman',
         'ktm',
         'deskripsi_peminjaman',
-        'nomor_akun'
+        'nomor_akun',
+        'nominal_fix',
     ];
 }

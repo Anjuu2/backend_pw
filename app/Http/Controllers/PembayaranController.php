@@ -114,33 +114,48 @@ class PembayaranController extends Controller
 
         $validateData = $request->validate([
             'id_peminjaman' => 'required',
-            'nominal_angsuran' => 'required|numeric|min:0',
-            'tahapan_angsuran' => 'required|integer|min:1',
-            'tanggal_pembayaran' => 'required',
+            'tanggal_pembayaran' => 'required|date',
         ]);
 
         $IdPeminjaman = $validateData['id_peminjaman'];
         $peminjaman = Peminjaman::find($IdPeminjaman);
-        if(!$peminjaman || $peminjaman->id != $IdPeminjaman){
+
+        if (!$peminjaman || $peminjaman->id != $IdPeminjaman) {
             return response()->json([
                 'message' => "Peminjaman not found",
             ], 403);
         }
 
+        // Menentukan tahapan_angsuran berikutnya
+        $lastPayment = Pembayaran::where('id_peminjaman', $IdPeminjaman)
+                                ->orderBy('tahapan_angsuran', 'desc')
+                                ->first();
+
+        // Jika belum ada pembayaran sebelumnya, mulai dari tahapan 1
+        $nextTahapan = $lastPayment ? $lastPayment->tahapan_angsuran + 1 : 1;
+
+        $nominal_angsuran = $peminjaman->nominal_fix / $peminjaman->masa_peminjaman;
+
         $pembayaran = Pembayaran::create([
             'nomor_akun' => $user->id,
             'id_peminjaman' => $validateData['id_peminjaman'],
-            'nominal_angsuran' => $request->nominal_angsuran,
-            'tahapan_angsuran' => $request->tahapan_angsuran,
+            'nominal_angsuran' => $nominal_angsuran,
+            'tahapan_angsuran' => $nextTahapan,
             'tanggal_pembayaran' => $request->tanggal_pembayaran,
         ]);
+
+        // Mengurangi nominal peminjaman sesuai dengan nominal angsuran
+        $peminjaman->nominal_peminjaman -= $nominal_angsuran;
+        $peminjaman->save();
 
         return response()->json([
             'status' => true,
             'message' => 'Pembayaran created successfully.',
             'data' => $pembayaran,
+            'peminjaman' => $peminjaman,
         ], 201);
     }
+
 
     public function index()
     {
